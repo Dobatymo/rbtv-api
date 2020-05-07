@@ -1,15 +1,40 @@
-import logging
-from urllib.parse import urlencode, urlunsplit
+import logging, re
+from urllib.parse import urlencode, urlunsplit, quote
 from functools import lru_cache
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from typing import Any, Dict, Iterable, Iterator, Optional
 
 import requests
 
-def name_of_season(season, tpl="Season {}"):
-	try:
+alpha = re.compile("[^a-z]+")
+try:
+	from unidecode import unidecode
+
+	def alphastring(s):
+		# type: (str, ) -> str
+
+		return alpha.sub("", unidecode(s).lower())
+
+except ImportError:
+	from unicodedata import normalize
+
+	def alphastring(s):
+		# type: (str, ) -> str
+
+		return alpha.sub("", normalize("NFKD", s).casefold().encode("ascii", "ignore").decode("ascii"))
+
+def name_of_season(season, tpl="Season {}", default=""):
+	# type: (dict, str, str) -> str
+
+	if season["name"]:
 		return season["name"]
-	except KeyError:
+	elif season["numeric"]:
 		return tpl.format(season["numeric"])
+	else:
+		return default
 
 def oauth_required(scope=None):
 
@@ -21,16 +46,41 @@ def oauth_required(scope=None):
 
 	return decorator
 
+def batch_iter(batchit, key):
+	# type: (Iterable[Dict[str, Iterable[T]]], str) -> Iterator[T]
+
+	for batch in batchit:
+		for item in batch[key]:
+			yield item
+
+def parse_datetime(datestr):
+	# type: (Optional[str], ) -> Optional[datetime]
+
+	if not datestr:
+		return None
+
+	if datestr.endswith("Z"):
+		datestr = datestr[:-1] + "+00:00"
+
+	return datetime.fromisoformat(datestr)
+
+synonyms = {
+	"eddy": "etienne",
+}
+
 class API(object):
 
 	netloc = "api.rocketbeans.tv"
 
 	def __init__(self, timeout=60, scheme="https"):
+		# type: (int, str) -> None
+
 		self.timeout = timeout
 		self.scheme = scheme
 
 	@lru_cache(maxsize=128)
 	def _request(self, path, **params):
+		# type: (str, **Any) -> Dict[str, Any]
 
 		query = urlencode(params)
 		parts = (self.scheme, self.netloc, path, query, "")
@@ -42,6 +92,8 @@ class API(object):
 		return r.json()
 
 	def _patch_request(self, path, body):
+		# type: (str, Dict[str, Any]) -> Any
+
 		parts = (self.scheme, self.netloc, path, "", "")
 		url = urlunsplit(parts)
 
@@ -54,6 +106,7 @@ class API(object):
 		return res["data"]
 
 	def _request_paged(self, path, limit, flat=True, **params):
+		# type: (str, int, bool **Any) -> Iterator[Any]
 
 		offset = 0
 		total = limit
@@ -72,6 +125,8 @@ class API(object):
 			offset += limit
 
 	def _request_single(self, path, **params):
+		# type: (str, **Any) -> Any
+
 		res = self._request(path, **params)
 		assert res["success"]
 		return res["data"]
@@ -84,8 +139,7 @@ class API(object):
 		""" Returns all blog posts for the given pagination parameters.
 		"""
 
-		for blog in self._request_paged("/v1/blog/all", 50, True):
-			yield blog
+		return self._request_paged("/v1/blog/all", 50, True):
 
 	def get_blog_posts_preview(self):
 		# type: () -> dict
@@ -93,8 +147,7 @@ class API(object):
 		""" Returns all blog posts.
 		"""
 
-		for blog in self._request_paged("/v1/blog/preview/all", 50, True):
-			yield blog
+		return self._request_paged("/v1/blog/preview/all", 50, True):
 
 	def get_blog_post(self, blogpost_id):
 		# type: (int, ) -> dict
@@ -173,8 +226,7 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		for ep in self._request_paged("/v1/media/episode/bybohne/{}".format(bohne_id), 50, False, order=order):
-			yield ep
+		return self._request_paged("/v1/media/episode/bybohne/{}".format(bohne_id), 50, False, order=order):
 
 	def get_episode(self, episode_id):
 		# type: (int, ) -> dict
@@ -191,8 +243,7 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		for ep in self._request_paged("/v1/media/episode/byseason/{}".format(season_id), 50, False, order=order):
-			yield ep
+		return self._request_paged("/v1/media/episode/byseason/{}".format(season_id), 50, False, order=order):
 
 	def get_episodes_by_show(self, show_id, order="ASC"):
 		# type: (int, str) -> Iterator[dict]
@@ -201,15 +252,13 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		for ep in self._request_paged("/v1/media/episode/byshow/{}".format(show_id), 50, False, order=order):
-			yield ep
+		return self._request_paged("/v1/media/episode/byshow/{}".format(show_id), 50, False, order=order):
 
 	def get_newest_episodes_preview(self, order="ASC"):
 		# type: (str, ) -> Iterator[dict]
 
 		assert order in ("ASC", "DESC")
-		for ep in self._request_paged("/v1/media/episode/preview/newest", 50, False, order=order):
-			yield ep
+		return self._request_paged("/v1/media/episode/preview/newest", 50, False, order=order):
 
 	@oauth_required()
 	def get_abobox_content_for_self(self):
@@ -218,8 +267,7 @@ class API(object):
 		""" Returns all episodes from subscribed shows and bohnen for the authorised user.
 		"""
 
-		for ep in self._request_paged("/v1/media/abobox/self", 50, False, order=order):
-			yield ep
+		return self._request_paged("/v1/media/abobox/self", 50, False, order=order):
 
 	def get_unsorted_episodes_by_show(self, show_id, order="ASC"):
 		# type: (int, str) -> Iterator[dict]
@@ -228,8 +276,7 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		for ep in self._request_paged("/v1/media/episode/byshow/unsorted/{}".format(show_id), 50, False, order=order):
-			yield ep
+		return self._request_paged("/v1/media/episode/byshow/unsorted/{}".format(show_id), 50, False, order=order):
 
 	def get_episodes_by_bohne_preview(self, bohne_id, order="ASC"):
 		# type: (int, str) -> dict
@@ -255,8 +302,7 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		for ep in self._request_paged("/v1/media/episode/byseason/preview/{}".format(season_id), 50, False, order=order):
-			yield ep
+		return self._request_paged("/v1/media/episode/byseason/preview/{}".format(season_id), 50, False, order=order):
 
 	def get_episodes_by_show_preview(self, show_id, order="ASC"):
 		# type: (int, str) -> Iterator[dict]
@@ -265,8 +311,7 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		for ep in self._request_paged("/v1/media/episode/byshow/preview/{}".format(show_id), 50, False, order=order):
-			yield ep
+		return self._request_paged("/v1/media/episode/byshow/preview/{}".format(show_id), 50, False, order=order):
 
 	def get_unsorted_episodes_by_show_preview(self, show_id, order="ASC"):
 		# type: (int, str) -> Iterator[dict]
@@ -276,8 +321,7 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		for ep in self._request_paged("/v1/media/episode/byshow/unsorted/preview/{}".format(show_id), 50, False, order=order):
-			yield ep
+		return self._request_paged("/v1/media/episode/byshow/unsorted/preview/{}".format(show_id), 50, False, order=order):
 
 	# Mediathek Show
 
@@ -286,8 +330,7 @@ class API(object):
 
 		assert sortby in ("LastEpisode", )
 		assert only in (None, "podcast")
-		for show in self._request_paged("/v1/media/show/all", 50, sortby=sortby, only=only):
-			yield show
+		return self._request_paged("/v1/media/show/all", 50, sortby=sortby, only=only):
 
 	def get_show(self, show_id):
 		# type: (int, ) -> dict
@@ -305,8 +348,7 @@ class API(object):
 
 		assert sortby in ("LastEpisode", )
 		assert only in (None, "podcast")
-		for show in self._request_paged("/v1/media/show/preview/all", 50, sortby=sortby, only=only):
-			yield show
+		return self._request_paged("/v1/media/show/preview/all", 50, sortby=sortby, only=only):
 
 	def get_show_preview(self, show_id):
 		# type: (int, ) -> dict
@@ -475,6 +517,7 @@ class API(object):
 class RBTVAPI(API):
 
 	def get_season(self, show_id, season_id):
+		# type: (int, int) -> dict
 
 		show = self.get_show(show_id)
 
@@ -488,7 +531,7 @@ class RBTVAPI(API):
 	def _preprocess(name):
 		# type: (str, ) -> str
 
-		return name.replace(" ", "").lower() # make show name matching independent of whitespace and casing
+		return alphastring(name)
 
 	def show_name_to_id(self, show_name):
 		# type: (str, ) -> int
@@ -502,11 +545,20 @@ class RBTVAPI(API):
 	def bohne_name_to_id(self, bohne_name):
 		# type: (str, ) -> int
 
+		pp_name = self._preprocess(bohne_name)
 		d = {self._preprocess(bohne["name"]): int(bohne["mgmtid"]) for bohne in self.get_bohnen_portraits()}
 		try:
-			return d[self._preprocess(bohne_name)]
+			return d[synonyms.get(pp_name, pp_name)]
 		except KeyError:
 			raise ValueError("Could not find bohne {}".format(bohne_name))
+
+	def search(self, s):
+		# type: (str, ) -> dict
+
+		""" Undocumented search endpoint used by the RBTV Mediathek webpage.
+		"""
+
+		return self._request_single("/v1/search/" + quote(s))
 
 if __name__ == "__main__":
 	from datetime import timezone
