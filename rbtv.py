@@ -139,7 +139,7 @@ class API(object):
 		""" Returns all blog posts for the given pagination parameters.
 		"""
 
-		return self._request_paged("/v1/blog/all", 50, True):
+		return self._request_paged("/v1/blog/all", 50, True)
 
 	def get_blog_posts_preview(self):
 		# type: () -> dict
@@ -147,7 +147,7 @@ class API(object):
 		""" Returns all blog posts.
 		"""
 
-		return self._request_paged("/v1/blog/preview/all", 50, True):
+		return self._request_paged("/v1/blog/preview/all", 50, True)
 
 	def get_blog_post(self, blogpost_id):
 		# type: (int, ) -> dict
@@ -226,7 +226,7 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		return self._request_paged("/v1/media/episode/bybohne/{}".format(bohne_id), 50, False, order=order):
+		return self._request_paged("/v1/media/episode/bybohne/{}".format(bohne_id), 50, False, order=order)
 
 	def get_episode(self, episode_id):
 		# type: (int, ) -> dict
@@ -243,7 +243,7 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		return self._request_paged("/v1/media/episode/byseason/{}".format(season_id), 50, False, order=order):
+		return self._request_paged("/v1/media/episode/byseason/{}".format(season_id), 50, False, order=order)
 
 	def get_episodes_by_show(self, show_id, order="ASC"):
 		# type: (int, str) -> Iterator[dict]
@@ -252,13 +252,13 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		return self._request_paged("/v1/media/episode/byshow/{}".format(show_id), 50, False, order=order):
+		return self._request_paged("/v1/media/episode/byshow/{}".format(show_id), 50, False, order=order)
 
 	def get_newest_episodes_preview(self, order="ASC"):
 		# type: (str, ) -> Iterator[dict]
 
 		assert order in ("ASC", "DESC")
-		return self._request_paged("/v1/media/episode/preview/newest", 50, False, order=order):
+		return self._request_paged("/v1/media/episode/preview/newest", 50, False, order=order)
 
 	@oauth_required()
 	def get_abobox_content_for_self(self):
@@ -267,7 +267,7 @@ class API(object):
 		""" Returns all episodes from subscribed shows and bohnen for the authorised user.
 		"""
 
-		return self._request_paged("/v1/media/abobox/self", 50, False, order=order):
+		return self._request_paged("/v1/media/abobox/self", 50, False, order=order)
 
 	def get_unsorted_episodes_by_show(self, show_id, order="ASC"):
 		# type: (int, str) -> Iterator[dict]
@@ -276,7 +276,7 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		return self._request_paged("/v1/media/episode/byshow/unsorted/{}".format(show_id), 50, False, order=order):
+		return self._request_paged("/v1/media/episode/byshow/unsorted/{}".format(show_id), 50, False, order=order)
 
 	def get_episodes_by_bohne_preview(self, bohne_id, order="ASC"):
 		# type: (int, str) -> dict
@@ -302,7 +302,7 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		return self._request_paged("/v1/media/episode/byseason/preview/{}".format(season_id), 50, False, order=order):
+		return self._request_paged("/v1/media/episode/byseason/preview/{}".format(season_id), 50, False, order=order)
 
 	def get_episodes_by_show_preview(self, show_id, order="ASC"):
 		# type: (int, str) -> Iterator[dict]
@@ -311,7 +311,7 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		return self._request_paged("/v1/media/episode/byshow/preview/{}".format(show_id), 50, False, order=order):
+		return self._request_paged("/v1/media/episode/byshow/preview/{}".format(show_id), 50, False, order=order)
 
 	def get_unsorted_episodes_by_show_preview(self, show_id, order="ASC"):
 		# type: (int, str) -> Iterator[dict]
@@ -321,7 +321,7 @@ class API(object):
 		"""
 
 		assert order in ("ASC", "DESC")
-		return self._request_paged("/v1/media/episode/byshow/unsorted/preview/{}".format(show_id), 50, False, order=order):
+		return self._request_paged("/v1/media/episode/byshow/unsorted/preview/{}".format(show_id), 50, False, order=order)
 
 	# Mediathek Show
 
@@ -330,7 +330,7 @@ class API(object):
 
 		assert sortby in ("LastEpisode", )
 		assert only in (None, "podcast")
-		return self._request_paged("/v1/media/show/all", 50, sortby=sortby, only=only):
+		return self._request_paged("/v1/media/show/all", 50, sortby=sortby, only=only)
 
 	def get_show(self, show_id):
 		# type: (int, ) -> dict
@@ -348,7 +348,7 @@ class API(object):
 
 		assert sortby in ("LastEpisode", )
 		assert only in (None, "podcast")
-		return self._request_paged("/v1/media/show/preview/all", 50, sortby=sortby, only=only):
+		return self._request_paged("/v1/media/show/preview/all", 50, sortby=sortby, only=only)
 
 	def get_show_preview(self, show_id):
 		# type: (int, ) -> dict
