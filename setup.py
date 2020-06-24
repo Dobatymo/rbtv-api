@@ -20,6 +20,6 @@ setup(
 		"Programming Language :: Python :: 3",
 	],
 	py_modules=["rbtv"],
-	install_requires=["requests"],
+	install_requires=["requests", "genutility"],
 	use_2to3=False
 )

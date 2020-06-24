@@ -4,10 +4,11 @@ from functools import lru_cache
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
+import requests
+from genutility.exceptions import assert_choice
+
 if TYPE_CHECKING:
 	from typing import Any, Dict, Iterable, Iterator, Optional
-
-import requests
 
 alpha = re.compile("[^a-z]+")
 try:
@@ -225,7 +226,7 @@ class API(object):
 		""" Returns information about all episodes for the given Bohne.
 		"""
 
-		assert order in ("ASC", "DESC")
+		assert_choice("order", order, {"ASC", "DESC"})
 		return self._request_paged("/v1/media/episode/bybohne/{}".format(bohne_id), 50, False, order=order)
 
 	def get_episode(self, episode_id):
@@ -242,7 +243,7 @@ class API(object):
 		""" Returns information about all episodes of a given season.
 		"""
 
-		assert order in ("ASC", "DESC")
+		assert_choice("order", order, {"ASC", "DESC"})
 		return self._request_paged("/v1/media/episode/byseason/{}".format(season_id), 50, False, order=order)
 
 	def get_episodes_by_show(self, show_id, order="ASC"):
@@ -251,13 +252,13 @@ class API(object):
 		""" Returns information about all episodes for the given show.
 		"""
 
-		assert order in ("ASC", "DESC")
+		assert_choice("order", order, {"ASC", "DESC"})
 		return self._request_paged("/v1/media/episode/byshow/{}".format(show_id), 50, False, order=order)
 
 	def get_newest_episodes_preview(self, order="ASC"):
 		# type: (str, ) -> Iterator[dict]
 
-		assert order in ("ASC", "DESC")
+		assert_choice("order", order, {"ASC", "DESC"})
 		return self._request_paged("/v1/media/episode/preview/newest", 50, False, order=order)
 
 	@oauth_required()
@@ -275,7 +276,7 @@ class API(object):
 		""" Returns reduced information about all episodes of a given season.
 		"""
 
-		assert order in ("ASC", "DESC")
+		assert_choice("order", order, {"ASC", "DESC"})
 		return self._request_paged("/v1/media/episode/byshow/unsorted/{}".format(show_id), 50, False, order=order)
 
 	def get_episodes_by_bohne_preview(self, bohne_id, order="ASC"):
@@ -284,7 +285,7 @@ class API(object):
 		""" Returns reduced information about all episodes for the given Bohne.
 		"""
 
-		assert order in ("ASC", "DESC")
+		assert_choice("order", order, {"ASC", "DESC"})
 		return self._request_single("/v1/media/episode/bybohne/preview/{}".format(bohne_id))
 
 	def get_episode_preview(self, episode_id):
@@ -301,7 +302,7 @@ class API(object):
 		""" Returns reduced information about all episodes of a given season.
 		"""
 
-		assert order in ("ASC", "DESC")
+		assert_choice("order", order, {"ASC", "DESC"})
 		return self._request_paged("/v1/media/episode/byseason/preview/{}".format(season_id), 50, False, order=order)
 
 	def get_episodes_by_show_preview(self, show_id, order="ASC"):
@@ -310,7 +311,7 @@ class API(object):
 		""" Returns reduced information about all episodes for the given show.
 		"""
 
-		assert order in ("ASC", "DESC")
+		assert_choice("order", order, {"ASC", "DESC"})
 		return self._request_paged("/v1/media/episode/byshow/preview/{}".format(show_id), 50, False, order=order)
 
 	def get_unsorted_episodes_by_show_preview(self, show_id, order="ASC"):
@@ -320,7 +321,7 @@ class API(object):
 			episodes for the given show.
 		"""
 
-		assert order in ("ASC", "DESC")
+		assert_choice("order", order, {"ASC", "DESC"})
 		return self._request_paged("/v1/media/episode/byshow/unsorted/preview/{}".format(show_id), 50, False, order=order)
 
 	# Mediathek Show
@@ -328,8 +329,8 @@ class API(object):
 	def get_shows(self, sortby="LastEpisode", only=None):
 		# type: (str, Optional[str]) -> Iterator[dict]
 
-		assert sortby in ("LastEpisode", )
-		assert only in (None, "podcast")
+		assert_choice("sortby", sortby, {"LastEpisode"})
+		assert_choice("only", only, {None, "podcast"})
 		return self._request_paged("/v1/media/show/all", 50, sortby=sortby, only=only)
 
 	def get_show(self, show_id):
@@ -346,8 +347,8 @@ class API(object):
 		""" Returns paginated, reduced information about all shows.
 		"""
 
-		assert sortby in ("LastEpisode", )
-		assert only in (None, "podcast")
+		assert_choice("sortby", sortby, {"LastEpisode"})
+		assert_choice("only", only, {None, "podcast"})
 		return self._request_paged("/v1/media/show/preview/all", 50, sortby=sortby, only=only)
 
 	def get_show_preview(self, show_id):
@@ -364,8 +365,8 @@ class API(object):
 		""" Returns minimal information about all shows.
 		"""
 
-		assert sortby in ("LastEpisode", )
-		assert only in (None, "podcast")
+		assert_choice("sortby", sortby, {"LastEpisode"})
+		assert_choice("only", only, {None, "podcast"})
 		return self._request_single("/v1/media/show/preview/mini/all", sortby=sortby, only=only)
 
 	# Event
@@ -550,7 +551,7 @@ class RBTVAPI(API):
 		try:
 			return d[synonyms.get(pp_name, pp_name)]
 		except KeyError:
-			raise ValueError("Could not find bohne {}".format(bohne_name))
+			raise ValueError("Could not find Bohne {}".format(bohne_name))
 
 	def search(self, s):
 		# type: (str, ) -> dict
