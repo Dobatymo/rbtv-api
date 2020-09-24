@@ -553,6 +553,11 @@ class RBTVAPI(API):
 		except KeyError:
 			raise ValueError("Could not find Bohne {}".format(bohne_name))
 
+	def bohne_id_to_name(self, bohne_id):
+		# type: (int, ) -> str
+
+		return self.get_bohne_portrait(bohne_id)["name"]
+
 	def search(self, s):
 		# type: (str, ) -> dict
 
