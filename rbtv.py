@@ -526,7 +526,7 @@ class RBTVAPI(API):
 			if season["id"] == season_id:
 				return season
 
-		raise KeyError("Season id not found")
+		raise KeyError("Season id not found: show={} season={}".format(show_id, season_id))
 
 	@staticmethod
 	def _preprocess(name):
