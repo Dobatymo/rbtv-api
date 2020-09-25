@@ -1,14 +1,16 @@
-import logging, re
-from urllib.parse import urlencode, urlunsplit, quote
-from functools import lru_cache
+import logging
+import re
 from datetime import datetime, timedelta
+from functools import lru_cache
 from typing import TYPE_CHECKING
+from urllib.parse import quote, urlencode, urlunsplit
 
 import requests
 from genutility.exceptions import assert_choice
 
 if TYPE_CHECKING:
-	from typing import Any, Dict, Iterable, Iterator, Optional
+	from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar
+	T = TypeVar("T")
 
 alpha = re.compile("[^a-z]+")
 try:
@@ -107,7 +109,7 @@ class API(object):
 		return res["data"]
 
 	def _request_paged(self, path, limit, flat=True, **params):
-		# type: (str, int, bool **Any) -> Iterator[Any]
+		# type: (str, int, bool, **Any) -> Iterator[Any]
 
 		offset = 0
 		total = limit
@@ -263,7 +265,7 @@ class API(object):
 
 	@oauth_required()
 	def get_abobox_content_for_self(self):
-		# type: (int, str) -> Iterator[dict]
+		# type: () -> Iterator[dict]
 
 		""" Returns all episodes from subscribed shows and bohnen for the authorised user.
 		"""
@@ -380,7 +382,7 @@ class API(object):
 		return self._request_single("/v1/rbtvevent/active")
 
 	def get_current_event_team(self, team_id):
-		# type: () -> dict
+		# type: (int, ) -> dict
 
 		""" Returns RBTV Event Team Information, restricted to active Events.
 		"""
@@ -389,7 +391,7 @@ class API(object):
 
 	@oauth_required("user.rbtvevent.read")
 	def get_current_event_joined_team(self, event_id):
-		# type: () -> dict
+		# type: (int, ) -> dict
 
 		""" Gets the joined Team for the given RBTV Event
 			(which must be active in order to request these information).
@@ -475,7 +477,7 @@ class API(object):
 
 	@oauth_required("user.subscriptions.manage")
 	def modify_subscription(self, type_id, entity_id, subscribed=None, flags=None):
-		# type: () -> dict
+		# type: (int, int, Optional[bool], Any) -> dict
 
 		""" Returns subscriptionResponse, requires subscriptionResponse in body.
 		"""
@@ -491,7 +493,7 @@ class API(object):
 
 	@oauth_required("user.subscriptions.manage")
 	def modify_subscription_defaults(self, type_id, flags=None):
-		# type: () -> dict
+		# type: (int, Any) -> dict
 
 		""" Returns default notification flags for the given type.
 			Requires subscriptionDefaultResponse in body.
@@ -508,6 +510,7 @@ class API(object):
 
 	@oauth_required("user.info")
 	def get_user_info(self):
+		# type: () -> dict
 
 		""" Returns information about the current user,
 			amount of Information depends on requested Scopes.
