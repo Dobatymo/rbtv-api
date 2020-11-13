@@ -71,6 +71,26 @@ synonyms = {
 	"eddy": "etienne",
 }
 
+def bohne_name_to_id(bohnen, bohne_name):
+	# type: (Iterable[dict], str) -> str
+
+	pp_name = alphastring(bohne_name)
+	d = {alphastring(bohne["name"]): int(bohne["mgmtid"]) for bohne in bohnen}
+	try:
+		return d[synonyms.get(pp_name, pp_name)]
+	except KeyError:
+		raise ValueError("Could not find Bohne {}".format(bohne_name))
+
+def show_name_to_id(shows, show_name):
+	# type: (Iterable[dict], str) -> str
+
+	pp_name = alphastring(show_name)
+	d = {alphastring(show["title"]): int(show["id"]) for show in shows}
+	try:
+		return d[pp_name]
+	except KeyError:
+		raise ValueError("Could not find show {}".format(show_name))
+
 class API(object):
 
 	netloc = "api.rocketbeans.tv"
@@ -540,21 +560,13 @@ class RBTVAPI(API):
 	def show_name_to_id(self, show_name):
 		# type: (str, ) -> int
 
-		d = {self._preprocess(show["title"]): int(show["id"]) for show in self.get_shows_mini()}
-		try:
-			return d[self._preprocess(show_name)]
-		except KeyError:
-			raise ValueError("Could not find show {}".format(show_name))
+		shows = self.get_shows_mini()
+		return show_name_to_id(shows, show_name)
 
 	def bohne_name_to_id(self, bohne_name):
 		# type: (str, ) -> int
-
-		pp_name = self._preprocess(bohne_name)
-		d = {self._preprocess(bohne["name"]): int(bohne["mgmtid"]) for bohne in self.get_bohnen_portraits()}
-		try:
-			return d[synonyms.get(pp_name, pp_name)]
-		except KeyError:
-			raise ValueError("Could not find Bohne {}".format(bohne_name))
+		bohnen = self.get_bohnen_portraits()
+		return bohne_name_to_id(bohnen, bohne_name)
 
 	def bohne_id_to_name(self, bohne_id):
 		# type: (int, ) -> str

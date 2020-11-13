@@ -8,7 +8,7 @@ with open("readme.md", "r", encoding="utf-8") as fr:
 setup(
 	author="Dobatymo",
 	name="rbtv-api",
-	version="0.0.5",
+	version="0.0.6",
 	url="https://github.com/Dobatymo/rbtv-api",
 	description="Simple Python wrapper for the JSON Rocket Beans TV API",
 	long_description=long_description,
