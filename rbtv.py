@@ -1,3 +1,5 @@
+from __future__ import generator_stop
+
 import logging
 import re
 from datetime import datetime, timedelta
@@ -72,7 +74,7 @@ synonyms = {
 }
 
 def bohne_name_to_id(bohnen, bohne_name):
-	# type: (Iterable[dict], str) -> str
+	# type: (Iterable[dict], str) -> int
 
 	pp_name = alphastring(bohne_name)
 	d = {alphastring(bohne["name"]): int(bohne["mgmtid"]) for bohne in bohnen}
@@ -82,7 +84,7 @@ def bohne_name_to_id(bohnen, bohne_name):
 		raise ValueError("Could not find Bohne {}".format(bohne_name))
 
 def show_name_to_id(shows, show_name):
-	# type: (Iterable[dict], str) -> str
+	# type: (Iterable[dict], str) -> int
 
 	pp_name = alphastring(show_name)
 	d = {alphastring(show["title"]): int(show["id"]) for show in shows}
@@ -157,7 +159,7 @@ class API(object):
 	# Blog
 
 	def get_blog_posts(self):
-		# type: () -> dict
+		# type: () -> Iterator[dict]
 
 		""" Returns all blog posts for the given pagination parameters.
 		"""
@@ -165,7 +167,7 @@ class API(object):
 		return self._request_paged("/v1/blog/all", 50, True)
 
 	def get_blog_posts_preview(self):
-		# type: () -> dict
+		# type: () -> Iterator[dict]
 
 		""" Returns all blog posts.
 		"""
@@ -290,7 +292,7 @@ class API(object):
 		""" Returns all episodes from subscribed shows and bohnen for the authorised user.
 		"""
 
-		return self._request_paged("/v1/media/abobox/self", 50, False, order=order)
+		return self._request_paged("/v1/media/abobox/self", 50, False)
 
 	def get_unsorted_episodes_by_show(self, show_id, order="ASC"):
 		# type: (int, str) -> Iterator[dict]
@@ -599,7 +601,7 @@ if __name__ == "__main__":
 
 	print("Bohnen portraits:")
 	for portrait in islice(api.get_bohnen_portraits(), 10):
-		print("id={} {}".format(portrait["mgmtid"], portrait["name"], portrait["episodeCount"]))
+		print("id={} {} (episodes={})".format(portrait["mgmtid"], portrait["name"], portrait["episodeCount"]))
 	print("-"*20)
 
 	print("Bohne id=33:", api.get_bohne(33)["firstname"])

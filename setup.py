@@ -1,5 +1,3 @@
-from io import open
-
 from setuptools import setup
 
 with open("readme.md", "r", encoding="utf-8") as fr:
@@ -8,7 +6,7 @@ with open("readme.md", "r", encoding="utf-8") as fr:
 setup(
 	author="Dobatymo",
 	name="rbtv-api",
-	version="0.0.6",
+	version="0.0.7",
 	url="https://github.com/Dobatymo/rbtv-api",
 	description="Simple Python wrapper for the JSON Rocket Beans TV API",
 	long_description=long_description,
@@ -17,7 +15,6 @@ setup(
 		"Intended Audience :: Developers",
 		"License :: OSI Approved :: ISC License (ISCL)",
 		"Operating System :: OS Independent",
-		"Programming Language :: Python :: 2",
 		"Programming Language :: Python :: 3",
 	],
 	py_modules=["rbtv"],
