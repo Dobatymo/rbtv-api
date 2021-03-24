@@ -6,7 +6,7 @@ with open("readme.md", "r", encoding="utf-8") as fr:
 setup(
 	author="Dobatymo",
 	name="rbtv-api",
-	version="0.0.7",
+	version="0.0.8",
 	url="https://github.com/Dobatymo/rbtv-api",
 	description="Simple Python wrapper for the JSON Rocket Beans TV API",
 	long_description=long_description,
@@ -18,7 +18,7 @@ setup(
 		"Programming Language :: Python :: 3",
 	],
 	py_modules=["rbtv"],
-	python_requires=">=2.7",
+	python_requires=">=3.5",
 	install_requires=["requests", "genutility"],
 	extras_require={"all": ["unidecode"]},
 	use_2to3=False
