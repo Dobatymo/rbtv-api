@@ -2,7 +2,7 @@ from __future__ import generator_stop
 
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import timedelta
 from functools import lru_cache
 from typing import TYPE_CHECKING
 from urllib.parse import quote, urlencode, urlunsplit
@@ -12,7 +12,9 @@ from genutility.exceptions import assert_choice
 from requests.exceptions import HTTPError  # noqa: F401
 
 if TYPE_CHECKING:
+	from datetime import datetime
 	from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar
+
 	T = TypeVar("T")
 
 alpha = re.compile("[^a-z]+")
@@ -58,17 +60,6 @@ def batch_iter(batchit, key):
 	for batch in batchit:
 		for item in batch[key]:
 			yield item
-
-def parse_datetime(datestr):
-	# type: (Optional[str], ) -> Optional[datetime]
-
-	if not datestr:
-		return None
-
-	if datestr.endswith("Z"):
-		datestr = datestr[:-1] + "+00:00"
-
-	return datetime.fromisoformat(datestr)
 
 synonyms = {
 	"eddy": "etienne",
