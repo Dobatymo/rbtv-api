@@ -12,599 +12,618 @@ from genutility.exceptions import assert_choice
 from requests.exceptions import HTTPError  # noqa: F401
 
 if TYPE_CHECKING:
-	from datetime import datetime
-	from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar
+    from datetime import datetime
+    from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar
 
-	T = TypeVar("T")
+    T = TypeVar("T")
 
 alpha = re.compile("[^a-z]+")
 try:
-	from unidecode import unidecode
+    from unidecode import unidecode
 
-	def alphastring(s):
-		# type: (str, ) -> str
+    def alphastring(s):
+        # type: (str, ) -> str
 
-		return alpha.sub("", unidecode(s).lower())
+        return alpha.sub("", unidecode(s).lower())
+
 
 except ImportError:
-	from unicodedata import normalize
+    from unicodedata import normalize
 
-	def alphastring(s):
-		# type: (str, ) -> str
+    def alphastring(s):
+        # type: (str, ) -> str
 
-		return alpha.sub("", normalize("NFKD", s).casefold().encode("ascii", "ignore").decode("ascii"))
+        return alpha.sub(
+            "",
+            normalize("NFKD", s).casefold().encode("ascii", "ignore").decode("ascii"),
+        )
+
 
 def name_of_season(season, tpl="Season {}", default=""):
-	# type: (Dict[str, Any], str, str) -> str
+    # type: (Dict[str, Any], str, str) -> str
 
-	if season["name"]:
-		return season["name"]
-	elif season["numeric"]:
-		return tpl.format(season["numeric"])
-	else:
-		return default
+    if season["name"]:
+        return season["name"]
+    elif season["numeric"]:
+        return tpl.format(season["numeric"])
+    else:
+        return default
+
 
 def oauth_required(scope=None):
+    def decorator(func):
+        def inner(*args, **kwargs):
+            raise RuntimeError("Oauth required, but not implemented yet")
 
-	def decorator(func):
-		def inner(*args, **kwargs):
-			raise RuntimeError("Oauth required, but not implemented yet")
+        return inner
 
-		return inner
+    return decorator
 
-	return decorator
 
 def batch_iter(batchit, key):
-	# type: (Iterable[Dict[str, Iterable[T]]], str) -> Iterator[T]
+    # type: (Iterable[Dict[str, Iterable[T]]], str) -> Iterator[T]
 
-	for batch in batchit:
-		for item in batch[key]:
-			yield item
+    for batch in batchit:
+        yield from batch[key]
+
 
 synonyms = {
-	"eddy": "etienne",
+    "eddy": "etienne",
 }
 
-def bohne_name_to_id(bohnen, bohne_name):
-	# type: (Iterable[Dict[str, Any]], str) -> int
 
-	pp_name = alphastring(bohne_name)
-	d = {alphastring(bohne["name"]): int(bohne["mgmtid"]) for bohne in bohnen}
-	try:
-		return d[synonyms.get(pp_name, pp_name)]
-	except KeyError:
-		raise ValueError("Could not find Bohne {}".format(bohne_name))
+def bohne_name_to_id(bohnen, bohne_name):
+    # type: (Iterable[Dict[str, Any]], str) -> int
+
+    pp_name = alphastring(bohne_name)
+    d = {alphastring(bohne["name"]): int(bohne["mgmtid"]) for bohne in bohnen}
+    try:
+        return d[synonyms.get(pp_name, pp_name)]
+    except KeyError:
+        raise ValueError(f"Could not find Bohne {bohne_name}")
+
 
 def show_name_to_id(shows, show_name):
-	# type: (Iterable[Dict[str, Any]], str) -> int
+    # type: (Iterable[Dict[str, Any]], str) -> int
 
-	pp_name = alphastring(show_name)
-	d = {alphastring(show["title"]): int(show["id"]) for show in shows}
-	try:
-		return d[pp_name]
-	except KeyError:
-		raise ValueError("Could not find show {}".format(show_name))
+    pp_name = alphastring(show_name)
+    d = {alphastring(show["title"]): int(show["id"]) for show in shows}
+    try:
+        return d[pp_name]
+    except KeyError:
+        raise ValueError(f"Could not find show {show_name}")
 
-class API(object):
 
-	netloc = "api.rocketbeans.tv"
+class API:
 
-	def __init__(self, timeout=60, scheme="https"):
-		# type: (int, str) -> None
+    netloc = "api.rocketbeans.tv"
 
-		self.timeout = timeout
-		self.scheme = scheme
+    def __init__(self, timeout=60, scheme="https"):
+        # type: (int, str) -> None
 
-	@lru_cache(maxsize=128)
-	def _request(self, path, **params):
-		# type: (str, **Any) -> Dict[str, Any]
+        self.timeout = timeout
+        self.scheme = scheme
 
-		query = urlencode(params)
-		parts = (self.scheme, self.netloc, path, query, "")
-		url = urlunsplit(parts)
+    @lru_cache(maxsize=128)
+    def _request(self, path, **params):
+        # type: (str, **Any) -> Dict[str, Any]
 
-		logging.debug("GET %s", url)
-		r = requests.get(url, timeout=self.timeout)
-		r.raise_for_status()
-		return r.json()
+        query = urlencode(params)
+        parts = (self.scheme, self.netloc, path, query, "")
+        url = urlunsplit(parts)
 
-	def _patch_request(self, path, body):
-		# type: (str, Dict[str, Any]) -> Any
+        logging.debug("GET %s", url)
+        r = requests.get(url, timeout=self.timeout)
+        r.raise_for_status()
+        return r.json()
 
-		parts = (self.scheme, self.netloc, path, "", "")
-		url = urlunsplit(parts)
+    def _patch_request(self, path, body):
+        # type: (str, Dict[str, Any]) -> Any
 
-		logging.debug("PATCH %s", url)
-		r = requests.patch(url, json=body, timeout=self.timeout)
-		r.raise_for_status()
-		res = r.json()
+        parts = (self.scheme, self.netloc, path, "", "")
+        url = urlunsplit(parts)
 
-		assert res["success"]
-		return res["data"]
+        logging.debug("PATCH %s", url)
+        r = requests.patch(url, json=body, timeout=self.timeout)
+        r.raise_for_status()
+        res = r.json()
 
-	def _request_paged(self, path, limit, flat=True, **params):
-		# type: (str, int, bool, **Any) -> Iterator[Any]
+        assert res["success"]
+        return res["data"]
 
-		offset = 0
-		total = limit
+    def _request_paged(self, path, limit, flat=True, **params):
+        # type: (str, int, bool, **Any) -> Iterator[Any]
 
-		while offset < total:
-			res = self._request(path, offset=offset, limit=limit, **params)
-			total = res["pagination"]["total"]
-			assert res["success"]
+        offset = 0
+        total = limit
 
-			if flat:
-				for item in res["data"]:
-					yield item
-			else:
-				yield res["data"]
+        while offset < total:
+            res = self._request(path, offset=offset, limit=limit, **params)
+            total = res["pagination"]["total"]
+            assert res["success"]
 
-			offset += limit
+            if flat:
+                yield from res["data"]
+            else:
+                yield res["data"]
 
-	def _request_single(self, path, **params):
-		# type: (str, **Any) -> Any
+            offset += limit
 
-		res = self._request(path, **params)
-		assert res["success"]
-		return res["data"]
+    def _request_single(self, path, **params):
+        # type: (str, **Any) -> Any
 
-	# Blog
+        res = self._request(path, **params)
+        assert res["success"]
+        return res["data"]
 
-	def get_blog_posts(self):
-		# type: () -> Iterator[Dict[str, Any]]
+    # Blog
 
-		""" Returns all blog posts for the given pagination parameters.
-		"""
+    def get_blog_posts(self):
+        # type: () -> Iterator[Dict[str, Any]]
 
-		return self._request_paged("/v1/blog/all", 50, True)
+        """Returns all blog posts for the given pagination parameters."""
 
-	def get_blog_posts_preview(self):
-		# type: () -> Iterator[Dict[str, Any]]
+        return self._request_paged("/v1/blog/all", 50, True)
 
-		""" Returns all blog posts.
-		"""
+    def get_blog_posts_preview(self):
+        # type: () -> Iterator[Dict[str, Any]]
 
-		return self._request_paged("/v1/blog/preview/all", 50, True)
+        """Returns all blog posts."""
 
-	def get_blog_post(self, blogpost_id):
-		# type: (int, ) -> Dict[str, Any]
+        return self._request_paged("/v1/blog/preview/all", 50, True)
 
-		""" Returns a single blog post.
-		"""
+    def get_blog_post(self, blogpost_id):
+        # type: (int, ) -> Dict[str, Any]
 
-		return self._request_single("/v1/blog/{}".format(blogpost_id))
+        """Returns a single blog post."""
 
-	def get_blog_post_preview(self, blogpost_id):
-		# type: (int, ) -> Dict[str, Any]
+        return self._request_single(f"/v1/blog/{blogpost_id}")
 
-		return self._request_single("/v1/blog/preview/{}".format(blogpost_id))
+    def get_blog_post_preview(self, blogpost_id):
+        # type: (int, ) -> Dict[str, Any]
 
-	# Bohne
+        return self._request_single(f"/v1/blog/preview/{blogpost_id}")
 
-	def get_bohnen_portraits(self):
-		# type: () -> List[Dict[str, Any]]
+    # Bohne
 
-		""" Returns reduced information about all team members.
-		"""
+    def get_bohnen_portraits(self):
+        # type: () -> List[Dict[str, Any]]
 
-		return self._request_single("/v1/bohne/portrait/all")
+        """Returns reduced information about all team members."""
 
-	def get_bohne(self, mgmtid):
-		# type: (int, ) -> Dict[str, Any]
+        return self._request_single("/v1/bohne/portrait/all")
 
-		""" Returns information about a single team member.
-		"""
+    def get_bohne(self, mgmtid):
+        # type: (int, ) -> Dict[str, Any]
 
-		return self._request_single("/v1/bohne/{}".format(mgmtid))
+        """Returns information about a single team member."""
 
-	def get_bohne_portrait(self, mgmtid):
-		# type: (int, ) -> Dict[str, Any]
+        return self._request_single(f"/v1/bohne/{mgmtid}")
 
-		""" Returns reduced information about a given team member.
-		"""
+    def get_bohne_portrait(self, mgmtid):
+        # type: (int, ) -> Dict[str, Any]
 
-		return self._request_single("/v1/bohne/portrait/{}".format(mgmtid))
+        """Returns reduced information about a given team member."""
 
-	# CMS
+        return self._request_single(f"/v1/bohne/portrait/{mgmtid}")
 
-	def get_cms_routes(self):
-		# type: () -> List[Dict[str, Any]]
+    # CMS
 
-		""" Returns all CMS routes (frontend paths which are connected to CMS pages).
-		"""
+    def get_cms_routes(self):
+        # type: () -> List[Dict[str, Any]]
 
-		return self._request_single("/v1/cms/route/all")
+        """Returns all CMS routes (frontend paths which are connected to CMS pages)."""
 
-	def get_cms_page(self, cms_id):
-		# type: (int, ) -> Dict[str, Any]
+        return self._request_single("/v1/cms/route/all")
 
-		""" Returns the given CMS page.
-		"""
+    def get_cms_page(self, cms_id):
+        # type: (int, ) -> Dict[str, Any]
 
-		return self._request_single("/v1/cms/{}".format(cms_id))
+        """Returns the given CMS page."""
 
-	# Frontend
+        return self._request_single(f"/v1/cms/{cms_id}")
 
-	def get_frontend_init_info(self):
-		# type: () -> Dict[str, Any]
+    # Frontend
 
-		""" Returns necessary information for frontend initialization,
-			such as current stream details, cms routes etc.
-		"""
+    def get_frontend_init_info(self):
+        # type: () -> Dict[str, Any]
 
-		return self._request_single("/v1/frontend/init")
+        """Returns necessary information for frontend initialization,
+        such as current stream details, cms routes etc.
+        """
 
-	# Mediathek Episode
+        return self._request_single("/v1/frontend/init")
 
-	def get_episodes_by_bohne(self, bohne_id, order="ASC"):
-		# type: (int, str) -> Iterator[Dict[str, Any]]
+    # Mediathek Episode
 
-		""" Returns information about all episodes for the given Bohne.
-		"""
+    def get_episodes_by_bohne(self, bohne_id, order="ASC"):
+        # type: (int, str) -> Iterator[Dict[str, Any]]
 
-		assert_choice("order", order, {"ASC", "DESC"})
-		return self._request_paged("/v1/media/episode/bybohne/{}".format(bohne_id), 50, False, order=order)
+        """Returns information about all episodes for the given Bohne."""
 
-	def get_episode(self, episode_id):
-		# type: (int, ) -> Dict[str, Any]
+        assert_choice("order", order, {"ASC", "DESC"})
+        return self._request_paged(
+            f"/v1/media/episode/bybohne/{bohne_id}", 50, False, order=order
+        )
 
-		""" Returns information about a single episode.
-		"""
+    def get_episode(self, episode_id):
+        # type: (int, ) -> Dict[str, Any]
 
-		return self._request_single("/v1/media/episode/{}".format(episode_id))
+        """Returns information about a single episode."""
 
-	def get_episodes_by_season(self, season_id, order="ASC"):
-		# type: (int, str) -> Iterator[Dict[str, Any]]
+        return self._request_single(f"/v1/media/episode/{episode_id}")
 
-		""" Returns information about all episodes of a given season.
-		"""
+    def get_episodes_by_season(self, season_id, order="ASC"):
+        # type: (int, str) -> Iterator[Dict[str, Any]]
 
-		assert_choice("order", order, {"ASC", "DESC"})
-		return self._request_paged("/v1/media/episode/byseason/{}".format(season_id), 50, False, order=order)
+        """Returns information about all episodes of a given season."""
 
-	def get_episodes_by_show(self, show_id, order="ASC"):
-		# type: (int, str) -> Iterator[Dict[str, Any]]
+        assert_choice("order", order, {"ASC", "DESC"})
+        return self._request_paged(
+            f"/v1/media/episode/byseason/{season_id}", 50, False, order=order
+        )
 
-		""" Returns information about all episodes for the given show.
-		"""
+    def get_episodes_by_show(self, show_id, order="ASC"):
+        # type: (int, str) -> Iterator[Dict[str, Any]]
 
-		assert_choice("order", order, {"ASC", "DESC"})
-		return self._request_paged("/v1/media/episode/byshow/{}".format(show_id), 50, False, order=order)
+        """Returns information about all episodes for the given show."""
 
-	def get_newest_episodes_preview(self, order="ASC"):
-		# type: (str, ) -> Iterator[Dict[str, Any]]
+        assert_choice("order", order, {"ASC", "DESC"})
+        return self._request_paged(
+            f"/v1/media/episode/byshow/{show_id}", 50, False, order=order
+        )
 
-		assert_choice("order", order, {"ASC", "DESC"})
-		return self._request_paged("/v1/media/episode/preview/newest", 50, False, order=order)
+    def get_newest_episodes_preview(self, order="ASC"):
+        # type: (str, ) -> Iterator[Dict[str, Any]]
 
-	@oauth_required()
-	def get_abobox_content_for_self(self):
-		# type: () -> Iterator[Dict[str, Any]]
+        assert_choice("order", order, {"ASC", "DESC"})
+        return self._request_paged(
+            "/v1/media/episode/preview/newest", 50, False, order=order
+        )
 
-		""" Returns all episodes from subscribed shows and bohnen for the authorised user.
-		"""
+    @oauth_required()
+    def get_abobox_content_for_self(self):
+        # type: () -> Iterator[Dict[str, Any]]
 
-		return self._request_paged("/v1/media/abobox/self", 50, False)
+        """Returns all episodes from subscribed shows and bohnen for the authorised user."""
 
-	def get_unsorted_episodes_by_show(self, show_id, order="ASC"):
-		# type: (int, str) -> Iterator[Dict[str, Any]]
+        return self._request_paged("/v1/media/abobox/self", 50, False)
 
-		""" Returns reduced information about all episodes of a given season.
-		"""
+    def get_unsorted_episodes_by_show(self, show_id, order="ASC"):
+        # type: (int, str) -> Iterator[Dict[str, Any]]
 
-		assert_choice("order", order, {"ASC", "DESC"})
-		return self._request_paged("/v1/media/episode/byshow/unsorted/{}".format(show_id), 50, False, order=order)
+        """Returns reduced information about all episodes of a given season."""
 
-	def get_episodes_by_bohne_preview(self, bohne_id, order="ASC"):
-		# type: (int, str) -> Dict[str, Any]
+        assert_choice("order", order, {"ASC", "DESC"})
+        return self._request_paged(
+            f"/v1/media/episode/byshow/unsorted/{show_id}", 50, False, order=order
+        )
 
-		""" Returns reduced information about all episodes for the given Bohne.
-		"""
+    def get_episodes_by_bohne_preview(self, bohne_id, order="ASC"):
+        # type: (int, str) -> Dict[str, Any]
 
-		assert_choice("order", order, {"ASC", "DESC"})
-		return self._request_single("/v1/media/episode/bybohne/preview/{}".format(bohne_id))
+        """Returns reduced information about all episodes for the given Bohne."""
 
-	def get_episode_preview(self, episode_id):
-		# type: (int, ) -> Dict[str, Any]
+        assert_choice("order", order, {"ASC", "DESC"})
+        return self._request_single(f"/v1/media/episode/bybohne/preview/{bohne_id}")
 
-		""" Returns reduced information about a single episode.
-		"""
+    def get_episode_preview(self, episode_id):
+        # type: (int, ) -> Dict[str, Any]
 
-		return self._request_single("/v1/media/episode/preview/{}".format(episode_id))
+        """Returns reduced information about a single episode."""
 
-	def get_episodes_by_season_preview(self, season_id, order="ASC"):
-		# type: (int, str) -> Iterator[Dict[str, Any]]
+        return self._request_single(f"/v1/media/episode/preview/{episode_id}")
 
-		""" Returns reduced information about all episodes of a given season.
-		"""
+    def get_episodes_by_season_preview(self, season_id, order="ASC"):
+        # type: (int, str) -> Iterator[Dict[str, Any]]
 
-		assert_choice("order", order, {"ASC", "DESC"})
-		return self._request_paged("/v1/media/episode/byseason/preview/{}".format(season_id), 50, False, order=order)
+        """Returns reduced information about all episodes of a given season."""
 
-	def get_episodes_by_show_preview(self, show_id, order="ASC"):
-		# type: (int, str) -> Iterator[Dict[str, Any]]
+        assert_choice("order", order, {"ASC", "DESC"})
+        return self._request_paged(
+            f"/v1/media/episode/byseason/preview/{season_id}", 50, False, order=order
+        )
 
-		""" Returns reduced information about all episodes for the given show.
-		"""
+    def get_episodes_by_show_preview(self, show_id, order="ASC"):
+        # type: (int, str) -> Iterator[Dict[str, Any]]
 
-		assert_choice("order", order, {"ASC", "DESC"})
-		return self._request_paged("/v1/media/episode/byshow/preview/{}".format(show_id), 50, False, order=order)
+        """Returns reduced information about all episodes for the given show."""
 
-	def get_unsorted_episodes_by_show_preview(self, show_id, order="ASC"):
-		# type: (int, str) -> Iterator[Dict[str, Any]]
+        assert_choice("order", order, {"ASC", "DESC"})
+        return self._request_paged(
+            f"/v1/media/episode/byshow/preview/{show_id}", 50, False, order=order
+        )
 
-		""" Returns reduced information about all unsorted (no season set)
-			episodes for the given show.
-		"""
+    def get_unsorted_episodes_by_show_preview(self, show_id, order="ASC"):
+        # type: (int, str) -> Iterator[Dict[str, Any]]
 
-		assert_choice("order", order, {"ASC", "DESC"})
-		return self._request_paged("/v1/media/episode/byshow/unsorted/preview/{}".format(show_id), 50, False, order=order)
+        """Returns reduced information about all unsorted (no season set)
+        episodes for the given show.
+        """
 
-	# Mediathek Show
+        assert_choice("order", order, {"ASC", "DESC"})
+        return self._request_paged(
+            f"/v1/media/episode/byshow/unsorted/preview/{show_id}",
+            50,
+            False,
+            order=order,
+        )
 
-	def get_shows(self, sortby="LastEpisode", only=None):
-		# type: (str, Optional[str]) -> Iterator[Dict[str, Any]]
+    # Mediathek Show
 
-		assert_choice("sortby", sortby, {"LastEpisode"})
-		assert_choice("only", only, {None, "podcast"})
-		return self._request_paged("/v1/media/show/all", 50, sortby=sortby, only=only)
+    def get_shows(self, sortby="LastEpisode", only=None):
+        # type: (str, Optional[str]) -> Iterator[Dict[str, Any]]
 
-	def get_show(self, show_id):
-		# type: (int, ) -> Dict[str, Any]
+        assert_choice("sortby", sortby, {"LastEpisode"})
+        assert_choice("only", only, {None, "podcast"})
+        return self._request_paged("/v1/media/show/all", 50, sortby=sortby, only=only)
 
-		""" Returns information about the given show.
-		"""
+    def get_show(self, show_id):
+        # type: (int, ) -> Dict[str, Any]
 
-		return self._request_single("/v1/media/show/{}".format(show_id))
+        """Returns information about the given show."""
 
-	def get_shows_preview(self, sortby="LastEpisode", only=None):
-		# type: (str, Optional[str]) -> Iterator[Dict[str, Any]]
+        return self._request_single(f"/v1/media/show/{show_id}")
 
-		""" Returns paginated, reduced information about all shows.
-		"""
+    def get_shows_preview(self, sortby="LastEpisode", only=None):
+        # type: (str, Optional[str]) -> Iterator[Dict[str, Any]]
 
-		assert_choice("sortby", sortby, {"LastEpisode"})
-		assert_choice("only", only, {None, "podcast"})
-		return self._request_paged("/v1/media/show/preview/all", 50, sortby=sortby, only=only)
+        """Returns paginated, reduced information about all shows."""
 
-	def get_show_preview(self, show_id):
-		# type: (int, ) -> Dict[str, Any]
+        assert_choice("sortby", sortby, {"LastEpisode"})
+        assert_choice("only", only, {None, "podcast"})
+        return self._request_paged(
+            "/v1/media/show/preview/all", 50, sortby=sortby, only=only
+        )
 
-		""" Returns reduced information about the given show.
-		"""
+    def get_show_preview(self, show_id):
+        # type: (int, ) -> Dict[str, Any]
 
-		return self._request_single("/v1/media/show/preview/{}".format(show_id))
+        """Returns reduced information about the given show."""
 
-	def get_shows_mini(self, sortby="LastEpisode", only=None):
-		# type: (str, Optional[str]) -> List[Dict[str, Any]]
+        return self._request_single(f"/v1/media/show/preview/{show_id}")
 
-		""" Returns minimal information about all shows.
-		"""
+    def get_shows_mini(self, sortby="LastEpisode", only=None):
+        # type: (str, Optional[str]) -> List[Dict[str, Any]]
 
-		assert_choice("sortby", sortby, {"LastEpisode"})
-		assert_choice("only", only, {None, "podcast"})
-		return self._request_single("/v1/media/show/preview/mini/all", sortby=sortby, only=only)
+        """Returns minimal information about all shows."""
 
-	# Event
+        assert_choice("sortby", sortby, {"LastEpisode"})
+        assert_choice("only", only, {None, "podcast"})
+        return self._request_single(
+            "/v1/media/show/preview/mini/all", sortby=sortby, only=only
+        )
 
-	def get_current_event(self):
-		# type: () -> Dict[str, Any]
+    # Event
 
-		""" Returns Information about the current active RBTV Event.
-		"""
+    def get_current_event(self):
+        # type: () -> Dict[str, Any]
 
-		return self._request_single("/v1/rbtvevent/active")
+        """Returns Information about the current active RBTV Event."""
 
-	def get_current_event_team(self, team_id):
-		# type: (int, ) -> Dict[str, Any]
+        return self._request_single("/v1/rbtvevent/active")
 
-		""" Returns RBTV Event Team Information, restricted to active Events.
-		"""
+    def get_current_event_team(self, team_id):
+        # type: (int, ) -> Dict[str, Any]
 
-		return self._request_single("/v1/rbtvevent/team/{id}".format(id=team_id))
+        """Returns RBTV Event Team Information, restricted to active Events."""
 
-	@oauth_required("user.rbtvevent.read")
-	def get_current_event_joined_team(self, event_id):
-		# type: (int, ) -> Dict[str, Any]
+        return self._request_single(f"/v1/rbtvevent/team/{team_id}")
 
-		""" Gets the joined Team for the given RBTV Event
-			(which must be active in order to request these information).
-		"""
+    @oauth_required("user.rbtvevent.read")
+    def get_current_event_joined_team(self, event_id):
+        # type: (int, ) -> Dict[str, Any]
 
-		return self._request_single("/v1/rbtvevent/{slug}/team".format(slug=event_id))
+        """Gets the joined Team for the given RBTV Event
+        (which must be active in order to request these information).
+        """
 
-	@oauth_required("user.rbtvevent.manage")
-	def current_event_join_team(self, event_id, team_id):
-		# type: (int, int) -> Dict[str, Any]
+        return self._request_single(f"/v1/rbtvevent/{event_id}/team")
 
-		""" Joins the given Team for the given Event (the event must be active).
-		"""
+    @oauth_required("user.rbtvevent.manage")
+    def current_event_join_team(self, event_id, team_id):
+        # type: (int, int) -> Dict[str, Any]
 
-		return self._request_single("/v1/rbtvevent/{slug}/team/{id}/join".format(slug=event_id, id=team_id)) # POST
+        """Joins the given Team for the given Event (the event must be active)."""
 
-	# Schedule
+        return self._request_single(
+            f"/v1/rbtvevent/{event_id}/team/{team_id}/join"
+        )  # POST
 
-	def get_schedule(self, startDay, endDay):
-		# type: (datetime, datetime) -> List[Dict[str, Any]]
+    # Schedule
 
-		""" Returns the program schedule. Each day starts with the first schedule item of type 'live' or 'premiere'.
-			Most of the time this will be "MoinMoin" at 10:30 CEST,
-			except on weekends or when there are 'live'/'premiere' items at 0:00 CEST.
-		"""
+    def get_schedule(self, startDay, endDay):
+        # type: (datetime, datetime) -> List[Dict[str, Any]]
 
-		assert endDay - startDay <= timedelta(days=14)
-		return self._request_single("/v1/schedule/normalized", startDay=startDay.timestamp(), endDay=endDay.timestamp())
+        """Returns the program schedule. Each day starts with the first schedule item of type 'live' or 'premiere'.
+        Most of the time this will be "MoinMoin" at 10:30 CEST,
+        except on weekends or when there are 'live'/'premiere' items at 0:00 CEST.
+        """
 
-	# Shop
+        assert endDay - startDay <= timedelta(days=14)
+        return self._request_single(
+            "/v1/schedule/normalized",
+            startDay=startDay.timestamp(),
+            endDay=endDay.timestamp(),
+        )
 
-	def get_products(self): # fixme: currently not working
-		# type: () -> Dict[str, Any]
+    # Shop
 
-		""" Returns information about all shop products.
-		"""
+    def get_products(self):  # fixme: currently not working
+        # type: () -> Dict[str, Any]
 
-		#return self._request_paged("/v1/simpleshop/product/all", 50)
-		return self._request_single("/v1/simpleshop/product/all")
+        """Returns information about all shop products."""
 
-	# StreamCount
+        # return self._request_paged("/v1/simpleshop/product/all", 50)
+        return self._request_single("/v1/simpleshop/product/all")
 
-	def get_viewer_count(self):
-		# type: () -> Dict[str, Any]
+    # StreamCount
 
-		""" Returns information about the current viewers.
-			Contains separate numbers for Youtube, Twitch, and combined.
-		"""
+    def get_viewer_count(self):
+        # type: () -> Dict[str, Any]
 
-		return self._request_single("/v1/streamcount")
+        """Returns information about the current viewers.
+        Contains separate numbers for Youtube, Twitch, and combined.
+        """
 
-	# Subscription
+        return self._request_single("/v1/streamcount")
 
-	@oauth_required("user.subscriptions.manage")
-	def subcribe(self, type_id, entity_id):
-		# type: (int, int) -> Dict[str, Any]
+    # Subscription
 
-		return self._request_single("/v1/subscription/{type}/{id}".format(type=type_id, id=entity_id)) # POST
+    @oauth_required("user.subscriptions.manage")
+    def subcribe(self, type_id, entity_id):
+        # type: (int, int) -> Dict[str, Any]
 
-	@oauth_required("user.subscriptions.manage")
-	def unsubscribe(self, type_id, entity_id):
-		# type: (int, int) -> Dict[str, Any]
+        return self._request_single(f"/v1/subscription/{type_id}/{entity_id}")  # POST
 
-		return self._request_single("/v1/subscription/{type}/{id}".format(type=type_id, id=entity_id)) # DELETE
+    @oauth_required("user.subscriptions.manage")
+    def unsubscribe(self, type_id, entity_id):
+        # type: (int, int) -> Dict[str, Any]
 
-	@oauth_required("user.subscriptions.read")
-	def get_subscriptions(self):
-		# type: () -> Dict[str, Any]
+        return self._request_single(f"/v1/subscription/{type_id}/{entity_id}")  # DELETE
 
-		""" Returns all subscriptions for the current user.
-		"""
+    @oauth_required("user.subscriptions.read")
+    def get_subscriptions(self):
+        # type: () -> Dict[str, Any]
 
-		return self._request_single("/v1/subscription/mysubscriptions")
+        """Returns all subscriptions for the current user."""
 
-	@oauth_required("user.subscriptions.read")
-	def get_subscription(self, type_id, entity_id):
-		# type: (int, int) -> Dict[str, Any]
+        return self._request_single("/v1/subscription/mysubscriptions")
 
-		""" Returns notification settings for the given subscription.
-		"""
+    @oauth_required("user.subscriptions.read")
+    def get_subscription(self, type_id, entity_id):
+        # type: (int, int) -> Dict[str, Any]
 
-		return self._request_single("/v1/subscription/{type}/{id}".format(type=type_id, id=entity_id)) # GET
+        """Returns notification settings for the given subscription."""
 
-	@oauth_required("user.subscriptions.manage")
-	def modify_subscription(self, type_id, entity_id, subscribed=None, flags=None):
-		# type: (int, int, Optional[bool], Any) -> Dict[str, Any]
+        return self._request_single(f"/v1/subscription/{type_id}/{entity_id}")  # GET
 
-		""" Returns subscriptionResponse, requires subscriptionResponse in body.
-		"""
+    @oauth_required("user.subscriptions.manage")
+    def modify_subscription(self, type_id, entity_id, subscribed=None, flags=None):
+        # type: (int, int, Optional[bool], Any) -> Dict[str, Any]
 
-		subscriptionResponse = {
-			"type": type_id,
-			"id": entity_id,
-			"subscribed": subscribed,
-			"flags": flags,
-		}
+        """Returns subscriptionResponse, requires subscriptionResponse in body."""
 
-		return self._patch_request("/v1/subscription/{type}/{id}".format(type=type_id, id=entity_id), subscriptionResponse)
+        subscriptionResponse = {
+            "type": type_id,
+            "id": entity_id,
+            "subscribed": subscribed,
+            "flags": flags,
+        }
 
-	@oauth_required("user.subscriptions.manage")
-	def modify_subscription_defaults(self, type_id, flags=None):
-		# type: (int, Any) -> Dict[str, Any]
+        return self._patch_request(
+            f"/v1/subscription/{type_id}/{entity_id}", subscriptionResponse
+        )
 
-		""" Returns default notification flags for the given type.
-			Requires subscriptionDefaultResponse in body.
-		"""
+    @oauth_required("user.subscriptions.manage")
+    def modify_subscription_defaults(self, type_id, flags=None):
+        # type: (int, Any) -> Dict[str, Any]
 
-		subscriptionDefaultResponse = {
-			"type": type_id,
-			"flags": flags,
-		}
+        """Returns default notification flags for the given type.
+        Requires subscriptionDefaultResponse in body.
+        """
 
-		return self._patch_request("/v1/subscription/mydefault/{type}".format(type=type_id), subscriptionDefaultResponse)
+        subscriptionDefaultResponse = {
+            "type": type_id,
+            "flags": flags,
+        }
 
-	# User
+        return self._patch_request(
+            f"/v1/subscription/mydefault/{type_id}", subscriptionDefaultResponse
+        )
 
-	@oauth_required("user.info")
-	def get_user_info(self):
-		# type: () -> Dict[str, Any]
+    # User
 
-		""" Returns information about the current user,
-			amount of Information depends on requested Scopes.
-		"""
+    @oauth_required("user.info")
+    def get_user_info(self):
+        # type: () -> Dict[str, Any]
 
-		return self._request_single("/v1/user/self")
+        """Returns information about the current user,
+        amount of Information depends on requested Scopes.
+        """
+
+        return self._request_single("/v1/user/self")
+
 
 class RBTVAPI(API):
+    def get_season(self, show_id, season_id):
+        # type: (int, int) -> Dict[str, Any]
 
-	def get_season(self, show_id, season_id):
-		# type: (int, int) -> Dict[str, Any]
+        show = self.get_show(show_id)
 
-		show = self.get_show(show_id)
+        for season in show["seasons"]:
+            if season["id"] == season_id:
+                return season
 
-		for season in show["seasons"]:
-			if season["id"] == season_id:
-				return season
+        raise KeyError(f"Season id not found: show={show_id} season={season_id}")
 
-		raise KeyError("Season id not found: show={} season={}".format(show_id, season_id))
+    @staticmethod
+    def _preprocess(name):
+        # type: (str, ) -> str
 
-	@staticmethod
-	def _preprocess(name):
-		# type: (str, ) -> str
+        return alphastring(name)
 
-		return alphastring(name)
+    def show_name_to_id(self, show_name):
+        # type: (str, ) -> int
 
-	def show_name_to_id(self, show_name):
-		# type: (str, ) -> int
+        shows = self.get_shows_mini()
+        return show_name_to_id(shows, show_name)
 
-		shows = self.get_shows_mini()
-		return show_name_to_id(shows, show_name)
+    def bohne_name_to_id(self, bohne_name):
+        # type: (str, ) -> int
+        bohnen = self.get_bohnen_portraits()
+        return bohne_name_to_id(bohnen, bohne_name)
 
-	def bohne_name_to_id(self, bohne_name):
-		# type: (str, ) -> int
-		bohnen = self.get_bohnen_portraits()
-		return bohne_name_to_id(bohnen, bohne_name)
+    def bohne_id_to_name(self, bohne_id):
+        # type: (int, ) -> str
 
-	def bohne_id_to_name(self, bohne_id):
-		# type: (int, ) -> str
+        return self.get_bohne_portrait(bohne_id)["name"]
 
-		return self.get_bohne_portrait(bohne_id)["name"]
+    def search(self, s):
+        # type: (str, ) -> Dict[str, Any]
 
-	def search(self, s):
-		# type: (str, ) -> Dict[str, Any]
+        """Undocumented search endpoint used by the RBTV Mediathek webpage."""
 
-		""" Undocumented search endpoint used by the RBTV Mediathek webpage.
-		"""
+        return self._request_single("/v1/search/" + quote(s))
 
-		return self._request_single("/v1/search/" + quote(s))
 
 if __name__ == "__main__":
-	from datetime import timezone
-	from itertools import islice
+    from datetime import timezone
+    from itertools import islice
 
-	api = RBTVAPI()
+    api = RBTVAPI()
 
-	start = datetime.now(timezone.utc)
-	end = datetime.now(timezone.utc) + timedelta(days=1)
+    start = datetime.now(timezone.utc)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
 
-	print("Blog posts:")
-	for post in islice(api.get_blog_posts(), 10):
-		print("id={} {}".format(post["id"], post["title"]))
-	print("-"*20)
+    print("Blog posts:")
+    for post in islice(api.get_blog_posts(), 10):
+        print("id={} {}".format(post["id"], post["title"]))
+    print("-" * 20)
 
-	print("Blog post id=100:", api.get_blog_post(100)["title"])
+    print("Blog post id=100:", api.get_blog_post(100)["title"])
 
-	print("Bohnen portraits:")
-	for portrait in islice(api.get_bohnen_portraits(), 10):
-		print("id={} {} (episodes={})".format(portrait["mgmtid"], portrait["name"], portrait["episodeCount"]))
-	print("-"*20)
+    print("Bohnen portraits:")
+    for portrait in islice(api.get_bohnen_portraits(), 10):
+        print(
+            "id={} {} (episodes={})".format(
+                portrait["mgmtid"], portrait["name"], portrait["episodeCount"]
+            )
+        )
+    print("-" * 20)
 
-	print("Bohne id=33:", api.get_bohne(33)["firstname"])
-	print("Bohne portrait id=33:", api.get_bohne_portrait(33)["name"])
+    print("Bohne id=33:", api.get_bohne(33)["firstname"])
+    print("Bohne portrait id=33:", api.get_bohne_portrait(33)["name"])
 
-	print("Episodes by bohne id=33:")
-	for episode in api.get_episodes_by_bohne_preview(33)["episodes"]:
-		print("id={} {}".format(episode["id"], episode["title"]))
-	print("-"*20)
+    print("Episodes by bohne id=33:")
+    for episode in api.get_episodes_by_bohne_preview(33)["episodes"]:
+        print("id={} {}".format(episode["id"], episode["title"]))
+    print("-" * 20)
 
-	print("Current event:", api.get_current_event())
-	print("First show of the day:", api.get_schedule(start, end)[0]["elements"][0]["title"])
-	print("Shop products:", api.get_products())
-	print("Total viewers:", api.get_viewer_count()["total"])
+    print("Current event:", api.get_current_event())
+    print(
+        "First show of the day:",
+        api.get_schedule(start, end)[0]["elements"][0]["title"],
+    )
+    print("Shop products:", api.get_products())
+    print("Total viewers:", api.get_viewer_count()["total"])
