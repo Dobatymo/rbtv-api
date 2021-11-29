@@ -11,6 +11,31 @@ import requests
 from genutility.exceptions import assert_choice
 from requests.exceptions import HTTPError  # noqa: F401
 
+from .types import (
+    IRBTVEvent,
+    IRBTVEventTeam,
+    blogPreviewResponse,
+    blogResponse,
+    bohnePortrait,
+    bohneResponse,
+    cmsPageResponse,
+    cmsRouteResponse,
+    entityUserResponse,
+    frontendInitResponse,
+    mediaEpisodeCombinedResponse,
+    mediaEpisodePreviewCombinedResponse,
+    mediaSeasonResponse,
+    mediaShowPreviewMiniResponse,
+    mediaShowPreviewResponse,
+    mediaShowResponse,
+    schedule,
+    simpleShopItem,
+    streamCount,
+    subscriptionDefaultResponse,
+    subscriptionListResponse,
+    subscriptionResponse,
+)
+
 T = TypeVar("T")
 
 alpha = re.compile("[^a-z]+")
@@ -143,43 +168,43 @@ class API:
 
     # Blog
 
-    def get_blog_posts(self) -> Iterator[Dict[str, Any]]:
+    def get_blog_posts(self) -> Iterator[blogResponse]:
 
         """Returns all blog posts for the given pagination parameters."""
 
         return self._request_paged("/v1/blog/all", 50, True)
 
-    def get_blog_posts_preview(self) -> Iterator[Dict[str, Any]]:
+    def get_blog_posts_preview(self) -> Iterator[blogPreviewResponse]:
 
         """Returns all blog posts."""
 
         return self._request_paged("/v1/blog/preview/all", 50, True)
 
-    def get_blog_post(self, blogpost_id: int) -> Dict[str, Any]:
+    def get_blog_post(self, blogpost_id: int) -> blogResponse:
 
         """Returns a single blog post."""
 
         return self._request_single(f"/v1/blog/{blogpost_id}")
 
-    def get_blog_post_preview(self, blogpost_id: int) -> Dict[str, Any]:
+    def get_blog_post_preview(self, blogpost_id: int) -> blogPreviewResponse:
 
         return self._request_single(f"/v1/blog/preview/{blogpost_id}")
 
     # Bohne
 
-    def get_bohnen_portraits(self) -> List[Dict[str, Any]]:
+    def get_bohnen_portraits(self) -> List[bohnePortrait]:
 
         """Returns reduced information about all team members."""
 
         return self._request_single("/v1/bohne/portrait/all")
 
-    def get_bohne(self, mgmtid: int) -> Dict[str, Any]:
+    def get_bohne(self, mgmtid: int) -> bohneResponse:
 
         """Returns information about a single team member."""
 
         return self._request_single(f"/v1/bohne/{mgmtid}")
 
-    def get_bohne_portrait(self, mgmtid: int) -> Dict[str, Any]:
+    def get_bohne_portrait(self, mgmtid: int) -> bohnePortrait:
 
         """Returns reduced information about a given team member."""
 
@@ -187,13 +212,13 @@ class API:
 
     # CMS
 
-    def get_cms_routes(self) -> List[Dict[str, Any]]:
+    def get_cms_routes(self) -> List[cmsRouteResponse]:
 
         """Returns all CMS routes (frontend paths which are connected to CMS pages)."""
 
         return self._request_single("/v1/cms/route/all")
 
-    def get_cms_page(self, cms_id: int) -> Dict[str, Any]:
+    def get_cms_page(self, cms_id: int) -> cmsPageResponse:
 
         """Returns the given CMS page."""
 
@@ -201,7 +226,7 @@ class API:
 
     # Frontend
 
-    def get_frontend_init_info(self) -> Dict[str, Any]:
+    def get_frontend_init_info(self) -> frontendInitResponse:
 
         """Returns necessary information for frontend initialization,
         such as current stream details, cms routes etc.
@@ -211,80 +236,88 @@ class API:
 
     # Mediathek Episode
 
-    def get_episodes_by_bohne(self, bohne_id: int, order: str = "ASC") -> Iterator[Dict[str, Any]]:
+    def get_episodes_by_bohne(self, bohne_id: int, order: str = "ASC") -> Iterator[mediaEpisodeCombinedResponse]:
 
         """Returns information about all episodes for the given Bohne."""
 
         assert_choice("order", order, {"ASC", "DESC"})
         return self._request_paged(f"/v1/media/episode/bybohne/{bohne_id}", 50, False, order=order)
 
-    def get_episode(self, episode_id: int) -> Dict[str, Any]:
+    def get_episode(self, episode_id: int) -> mediaEpisodeCombinedResponse:
 
         """Returns information about a single episode."""
 
         return self._request_single(f"/v1/media/episode/{episode_id}")
 
-    def get_episodes_by_season(self, season_id: int, order: str = "ASC") -> Iterator[Dict[str, Any]]:
+    def get_episodes_by_season(self, season_id: int, order: str = "ASC") -> Iterator[mediaEpisodeCombinedResponse]:
 
         """Returns information about all episodes of a given season."""
 
         assert_choice("order", order, {"ASC", "DESC"})
         return self._request_paged(f"/v1/media/episode/byseason/{season_id}", 50, False, order=order)
 
-    def get_episodes_by_show(self, show_id: int, order: str = "ASC") -> Iterator[Dict[str, Any]]:
+    def get_episodes_by_show(self, show_id: int, order: str = "ASC") -> Iterator[mediaEpisodeCombinedResponse]:
 
         """Returns information about all episodes for the given show."""
 
         assert_choice("order", order, {"ASC", "DESC"})
         return self._request_paged(f"/v1/media/episode/byshow/{show_id}", 50, False, order=order)
 
-    def get_newest_episodes_preview(self, order: str = "ASC") -> Iterator[Dict[str, Any]]:
+    def get_newest_episodes_preview(self, order: str = "ASC") -> Iterator[mediaEpisodePreviewCombinedResponse]:
 
         assert_choice("order", order, {"ASC", "DESC"})
         return self._request_paged("/v1/media/episode/preview/newest", 50, False, order=order)
 
     @oauth_required()
-    def get_abobox_content_for_self(self) -> Iterator[Dict[str, Any]]:
+    def get_abobox_content_for_self(self) -> Iterator[mediaEpisodePreviewCombinedResponse]:
 
         """Returns all episodes from subscribed shows and bohnen for the authorised user."""
 
         return self._request_paged("/v1/media/abobox/self", 50, False)
 
-    def get_unsorted_episodes_by_show(self, show_id: int, order: str = "ASC") -> Iterator[Dict[str, Any]]:
+    def get_unsorted_episodes_by_show(
+        self, show_id: int, order: str = "ASC"
+    ) -> Iterator[mediaEpisodePreviewCombinedResponse]:
 
         """Returns reduced information about all episodes of a given season."""
 
         assert_choice("order", order, {"ASC", "DESC"})
         return self._request_paged(f"/v1/media/episode/byshow/unsorted/{show_id}", 50, False, order=order)
 
-    def get_episodes_by_bohne_preview(self, bohne_id: int, order: str = "ASC") -> Dict[str, Any]:
+    def get_episodes_by_bohne_preview(self, bohne_id: int, order: str = "ASC") -> mediaEpisodePreviewCombinedResponse:
 
         """Returns reduced information about all episodes for the given Bohne."""
 
         assert_choice("order", order, {"ASC", "DESC"})
         return self._request_single(f"/v1/media/episode/bybohne/preview/{bohne_id}")
 
-    def get_episode_preview(self, episode_id: int) -> Dict[str, Any]:
+    def get_episode_preview(self, episode_id: int) -> mediaEpisodePreviewCombinedResponse:
 
         """Returns reduced information about a single episode."""
 
         return self._request_single(f"/v1/media/episode/preview/{episode_id}")
 
-    def get_episodes_by_season_preview(self, season_id: int, order: str = "ASC") -> Iterator[Dict[str, Any]]:
+    def get_episodes_by_season_preview(
+        self, season_id: int, order: str = "ASC"
+    ) -> Iterator[mediaEpisodePreviewCombinedResponse]:
 
         """Returns reduced information about all episodes of a given season."""
 
         assert_choice("order", order, {"ASC", "DESC"})
         return self._request_paged(f"/v1/media/episode/byseason/preview/{season_id}", 50, False, order=order)
 
-    def get_episodes_by_show_preview(self, show_id: int, order: str = "ASC") -> Iterator[Dict[str, Any]]:
+    def get_episodes_by_show_preview(
+        self, show_id: int, order: str = "ASC"
+    ) -> Iterator[mediaEpisodePreviewCombinedResponse]:
 
         """Returns reduced information about all episodes for the given show."""
 
         assert_choice("order", order, {"ASC", "DESC"})
         return self._request_paged(f"/v1/media/episode/byshow/preview/{show_id}", 50, False, order=order)
 
-    def get_unsorted_episodes_by_show_preview(self, show_id: int, order: str = "ASC") -> Iterator[Dict[str, Any]]:
+    def get_unsorted_episodes_by_show_preview(
+        self, show_id: int, order: str = "ASC"
+    ) -> Iterator[mediaEpisodePreviewCombinedResponse]:
 
         """Returns reduced information about all unsorted (no season set)
         episodes for the given show.
@@ -300,19 +333,21 @@ class API:
 
     # Mediathek Show
 
-    def get_shows(self, sortby: str = "LastEpisode", only: Optional[str] = None) -> Iterator[Dict[str, Any]]:
+    def get_shows(self, sortby: str = "LastEpisode", only: Optional[str] = None) -> Iterator[mediaShowResponse]:
 
         assert_choice("sortby", sortby, {"LastEpisode"})
         assert_choice("only", only, {None, "podcast"})
         return self._request_paged("/v1/media/show/all", 50, sortby=sortby, only=only)
 
-    def get_show(self, show_id: int) -> Dict[str, Any]:
+    def get_show(self, show_id: int) -> mediaShowResponse:
 
         """Returns information about the given show."""
 
         return self._request_single(f"/v1/media/show/{show_id}")
 
-    def get_shows_preview(self, sortby: str = "LastEpisode", only: Optional[str] = None) -> Iterator[Dict[str, Any]]:
+    def get_shows_preview(
+        self, sortby: str = "LastEpisode", only: Optional[str] = None
+    ) -> Iterator[mediaShowPreviewResponse]:
 
         """Returns paginated, reduced information about all shows."""
 
@@ -320,13 +355,15 @@ class API:
         assert_choice("only", only, {None, "podcast"})
         return self._request_paged("/v1/media/show/preview/all", 50, sortby=sortby, only=only)
 
-    def get_show_preview(self, show_id: int) -> Dict[str, Any]:
+    def get_show_preview(self, show_id: int) -> mediaShowPreviewResponse:
 
         """Returns reduced information about the given show."""
 
         return self._request_single(f"/v1/media/show/preview/{show_id}")
 
-    def get_shows_mini(self, sortby: str = "LastEpisode", only: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_shows_mini(
+        self, sortby: str = "LastEpisode", only: Optional[str] = None
+    ) -> List[mediaShowPreviewMiniResponse]:
 
         """Returns minimal information about all shows."""
 
@@ -336,20 +373,20 @@ class API:
 
     # Event
 
-    def get_current_event(self) -> Dict[str, Any]:
+    def get_current_event(self) -> IRBTVEvent:
 
         """Returns Information about the current active RBTV Event."""
 
         return self._request_single("/v1/rbtvevent/active")
 
-    def get_current_event_team(self, team_id: int) -> Dict[str, Any]:
+    def get_current_event_team(self, team_id: int) -> IRBTVEventTeam:
 
         """Returns RBTV Event Team Information, restricted to active Events."""
 
         return self._request_single(f"/v1/rbtvevent/team/{team_id}")
 
     @oauth_required("user.rbtvevent.read")
-    def get_current_event_joined_team(self, event_id: int) -> Dict[str, Any]:
+    def get_current_event_joined_team(self, event_id: int) -> IRBTVEventTeam:
 
         """Gets the joined Team for the given RBTV Event
         (which must be active in order to request these information).
@@ -358,7 +395,7 @@ class API:
         return self._request_single(f"/v1/rbtvevent/{event_id}/team")
 
     @oauth_required("user.rbtvevent.manage")
-    def current_event_join_team(self, event_id: int, team_id: int) -> Dict[str, Any]:
+    def current_event_join_team(self, event_id: int, team_id: int) -> IRBTVEventTeam:
 
         """Joins the given Team for the given Event (the event must be active)."""
 
@@ -366,7 +403,7 @@ class API:
 
     # Schedule
 
-    def get_schedule(self, startDay: datetime, endDay: datetime) -> List[Dict[str, Any]]:
+    def get_schedule(self, startDay: datetime, endDay: datetime) -> List[schedule]:
 
         """Returns the program schedule. Each day starts with the first schedule item of type 'live' or 'premiere'.
         Most of the time this will be "MoinMoin" at 10:30 CEST,
@@ -382,7 +419,7 @@ class API:
 
     # Shop
 
-    def get_products(self) -> Dict[str, Any]:  # fixme: currently not working
+    def get_products(self) -> simpleShopItem:  # fixme: currently not working
 
         """Returns information about all shop products."""
 
@@ -391,7 +428,7 @@ class API:
 
     # StreamCount
 
-    def get_viewer_count(self) -> Dict[str, Any]:
+    def get_viewer_count(self) -> streamCount:
 
         """Returns information about the current viewers.
         Contains separate numbers for Youtube, Twitch, and combined.
@@ -402,28 +439,28 @@ class API:
     # Subscription
 
     @oauth_required("user.subscriptions.manage")
-    def subcribe(self, type_id: int, entity_id: int) -> Dict[str, Any]:
+    def subcribe(self, type_id: int, entity_id: int) -> subscriptionResponse:
 
-        return self._request_single(f"/v1/subscription/{type_id}/{entity_id}")  # POST
+        return self._request_single(f"/v1/subscription/{type_id}/{entity_id}", method="POST")
 
     @oauth_required("user.subscriptions.manage")
-    def unsubscribe(self, type_id: int, entity_id: int) -> Dict[str, Any]:
+    def unsubscribe(self, type_id: int, entity_id: int) -> subscriptionResponse:
 
-        return self._request_single(f"/v1/subscription/{type_id}/{entity_id}")  # DELETE
+        return self._request_single(f"/v1/subscription/{type_id}/{entity_id}", method="DELETE")
 
     @oauth_required("user.subscriptions.read")
-    def get_subscriptions(self) -> Dict[str, Any]:
+    def get_subscriptions(self) -> subscriptionListResponse:
 
         """Returns all subscriptions for the current user."""
 
         return self._request_single("/v1/subscription/mysubscriptions")
 
     @oauth_required("user.subscriptions.read")
-    def get_subscription(self, type_id: int, entity_id: int) -> Dict[str, Any]:
+    def get_subscription(self, type_id: int, entity_id: int) -> subscriptionResponse:
 
         """Returns notification settings for the given subscription."""
 
-        return self._request_single(f"/v1/subscription/{type_id}/{entity_id}")  # GET
+        return self._request_single(f"/v1/subscription/{type_id}/{entity_id}")
 
     @oauth_required("user.subscriptions.manage")
     def modify_subscription(
@@ -432,7 +469,7 @@ class API:
         entity_id: int,
         subscribed: Optional[bool] = None,
         flags: Any = None,
-    ) -> Dict[str, Any]:
+    ) -> subscriptionResponse:
 
         """Returns subscriptionResponse, requires subscriptionResponse in body."""
 
@@ -446,7 +483,7 @@ class API:
         return self._patch_request(f"/v1/subscription/{type_id}/{entity_id}", subscriptionResponse)
 
     @oauth_required("user.subscriptions.manage")
-    def modify_subscription_defaults(self, type_id: int, flags: Any = None) -> Dict[str, Any]:
+    def modify_subscription_defaults(self, type_id: int, flags: Any = None) -> subscriptionDefaultResponse:
 
         """Returns default notification flags for the given type.
         Requires subscriptionDefaultResponse in body.
@@ -462,7 +499,7 @@ class API:
     # User
 
     @oauth_required("user.info")
-    def get_user_info(self) -> Dict[str, Any]:
+    def get_user_info(self) -> entityUserResponse:
 
         """Returns information about the current user,
         amount of Information depends on requested Scopes.
@@ -472,7 +509,7 @@ class API:
 
 
 class RBTVAPI(API):
-    def get_season(self, show_id: int, season_id: int) -> Dict[str, Any]:
+    def get_season(self, show_id: int, season_id: int) -> mediaSeasonResponse:
 
         show = self.get_show(show_id)
 
