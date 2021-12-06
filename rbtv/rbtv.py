@@ -345,6 +345,10 @@ class API:
 
         return self._request_single(f"/v1/media/show/{show_id}")
 
+    def get_featured_shows_preview(self) -> List[mediaShowPreviewResponse]:
+
+        return self._request_single("/v1/media/show/preview/featured")
+
     def get_shows_preview(
         self, sortby: str = "LastEpisode", only: Optional[str] = None
     ) -> Iterator[mediaShowPreviewResponse]:
@@ -373,7 +377,7 @@ class API:
 
     # Event
 
-    def get_current_event(self) -> IRBTVEvent:
+    def get_current_event(self) -> Optional[IRBTVEvent]:  # bad docs
 
         """Returns Information about the current active RBTV Event."""
 
