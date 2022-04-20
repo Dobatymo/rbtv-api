@@ -1,7 +1,8 @@
-from typing import TypedDict
 from enum import IntEnum
+from typing import TypedDict
 
 Date = str
+
 
 class userAuthTokenType(IntEnum):
     TOKEN_NORMAL = 0

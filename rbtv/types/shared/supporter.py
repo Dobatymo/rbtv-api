@@ -1,7 +1,8 @@
-from typing import TypedDict, Dict, Optional
 from enum import IntEnum, IntFlag
+from typing import Dict, Optional, TypedDict
 
 Date = str
+
 
 class SupporterPaymentProvider(IntEnum):
     PAYPAL = 0
@@ -53,4 +54,3 @@ class SupporterSubscriptionTerminationReason(IntFlag):
         | SST_OWN_MESSAGE
         | SST_HIDDEN
     )
-

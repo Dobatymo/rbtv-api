@@ -3,9 +3,8 @@ from typing import Dict, List, Literal, Optional, TypedDict, Union
 
 Date = str
 
-from .shared.raffle import *
 from .shared.image import *
-
+from .shared.raffle import *
 
 # shared/bohneportrait.ts
 
@@ -262,10 +261,9 @@ class ITermsVersion(TypedDict):
     privacyPolicy: Date
 
 
-from .shared.token import *
-
-from .response.auth.AuthPublic import authProvider
 from .response.auth.AuthPublic import *
+from .response.auth.AuthPublic import authProvider
+from .shared.token import *
 
 # response/blog/BlogPublic.ts
 
@@ -517,7 +515,7 @@ class mediaShowResponse(TypedDict, total=False):
     backgroundImage: Optional[List[Image]]
     slideshowImages: List[List[Image]]
     links: List[link]
-    hosts: Optional[List[bohnePortrait]]  
+    hosts: Optional[List[bohnePortrait]]
     seasons: List[mediaSeasonResponse]
     hasUnsortedEpisodes: bool
     lastEpisode: mediaEpisodeCombinedResponse

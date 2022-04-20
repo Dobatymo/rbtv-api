@@ -1,12 +1,12 @@
-from itertools import islice
-from typing import Any, Dict, Optional, Sequence, TypedDict, Type
-from unittest import TestCase
 from inspect import isgenerator
-
-from rbtv import API
-from rbtv import types
+from itertools import islice
+from typing import Any, Dict, Optional, Sequence, Type, TypedDict
+from unittest import TestCase
 
 from typeguard import check_type
+
+from rbtv import API, types
+
 
 class ApiTest(TestCase):
     @classmethod
@@ -35,7 +35,7 @@ class ApiTest(TestCase):
     def _test_get_bohnen_portraits(self):
         func = self.api.get_bohnen_portraits
         result = func()[0]
-        
+
         try:
             check_type("bohnePortrait", result, getattr(types, "bohnePortrait"))
         except TypeError as e:

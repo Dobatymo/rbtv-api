@@ -1,5 +1,6 @@
 from typing import TypedDict
 
+
 class Image(TypedDict):
     url: str
     name: str

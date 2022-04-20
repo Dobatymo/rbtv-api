@@ -46,7 +46,6 @@ try:
 
         return alpha.sub("", unidecode(s).lower())
 
-
 except ImportError:
     from unicodedata import normalize
 
