@@ -3,8 +3,8 @@ from typing import Dict, List, Literal, Optional, TypedDict, Union
 
 Date = str
 
-from .shared.image import *
-from .shared.raffle import *
+from .shared.image import Image
+from .shared.raffle import IRaffleTeaser
 
 # shared/bohneportrait.ts
 
@@ -261,7 +261,6 @@ class ITermsVersion(TypedDict):
     privacyPolicy: Date
 
 
-from .response.auth.AuthPublic import *
 from .response.auth.AuthPublic import authProvider
 from .shared.token import *
 

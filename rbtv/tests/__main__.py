@@ -1,6 +1,5 @@
 from inspect import isgenerator
 from itertools import islice
-from typing import Any, Dict, Optional, Sequence, Type, TypedDict
 from unittest import TestCase
 
 from typeguard import check_type

@@ -4,20 +4,39 @@ on: [push]
 
 jobs:
 
-  deploy:
+  lint:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@master
-    - uses: actions/setup-python@v1
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      run: |
+        python -m pip install -U pip wheel
+        python -m pip install black isort flake8 bandit[toml]
+    - run: python -m black . --check
+    - run: python -m isort . --check-only
+    - run: python -m flake8 .
+    - run: python -m bandit . --recursive -c pyproject.toml
+
+
+  deploy:
+    needs: lint
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.8'
-        architecture: 'x64'
     - name: Build dists
       run: |
-        pip install wheel
-        python setup.py sdist bdist_wheel
+        python -m pip install wheel build
+        python -m build
     - name: Publish a Python distribution to PyPI
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.pypi_password }}

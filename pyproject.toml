@@ -1,7 +1,66 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools",
+]
+
+[project]
+name = "rbtv-api"
+version = "0.0.8"
+description = "Simple Python wrapper for the JSON Rocket Beans TV API"
+readme = { file = "readme.md", content-type = "text/markdown" }
+authors = [
+  { name = "Dobatymo" },
+]
+requires-python = ">=3.7"
+classifiers = [
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: ISC License (ISCL)",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+  "genutility[exceptions]",
+  "requests",
+]
+optional-dependencies.all = [
+  "unidecode",
+]
+
+urls.Home = "https://github.com/Dobatymo/rbtv-api"
+
+[tool.setuptools]
+packages = [
+  "rbtv",
+]
+
+[tool.setuptools.package-data]
+rbtv = [
+  "py.typed",
+]
+
 [tool.black]
+line-length = 120
+
+[tool.ruff]
 line-length = 120
 
 [tool.isort]
 profile = "black"
-src_paths = ["."]
 line_length = 120
+
+[tool.mypy]
+allow_redefinition = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[tool.bandit]
+skips = [
+  "B101",
+]

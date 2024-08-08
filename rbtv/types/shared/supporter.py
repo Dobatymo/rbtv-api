@@ -1,5 +1,5 @@
 from enum import IntEnum, IntFlag
-from typing import Dict, Optional, TypedDict
+from typing import Optional, TypedDict
 
 Date = str
 
